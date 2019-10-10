@@ -1,7 +1,7 @@
 /* 
-* OAT Station Monitor
+* Station Cargo Monitor
 * By Dragonhost
-* v1.1
+* v1.1.1
 * 
 * Instructions: 
 * 
@@ -322,7 +322,8 @@ public void Main(string argument)
 * CHANGELOG / Developer's roadmap (# marks the actual version)
 * v0.1: Initial code base;
 * v1.0 release;
-* #v1.1 add ingot cargo display
+* v1.1 add ingot cargo display
+* #v1.1.1 patch naming of file
 * v1.2 add limits for ingots and create a mining list
 * v1.3 add colors for ingots under the limit
 * v1.4 add multi screen support
