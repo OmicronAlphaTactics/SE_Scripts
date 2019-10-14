@@ -1,7 +1,7 @@
 /* 
 * Station Cargo Monitor
 * By Dragonhost
-* v1.2
+* v1.2.1
 * 
 * Instructions: 
 * 
@@ -24,6 +24,14 @@ int	updateTimer = 0,
 		OreFilledBar = 0,
 		IngotFilledBar = 0,
 		Limit_IronIngot = 100000,
+		Limit_Nickel = 10000,
+		Limit_Silicon = 10000,
+		Limit_Cobalt = 10000,
+		Limit_Magnesium = 1000,
+		Limit_Silver = 5000,
+		Limit_Gold = 2000,
+		Limit_Uranium = 500,
+		Limit_Platinum = 1000,		
 		BarLength = 20;
 string Spacing1 = "    ",
 			 BarFill = "|",
@@ -207,24 +215,59 @@ public void CheckIngotLimits()
 {
 	MiningList = "Ores to mine : ";
     var pairs = IngotTotals.ToList();
-    for (int i = 0; i < pairs.Count; i++)
-    {
-        if (pairs[i].Key == "Iron")
-        {
-            if (pairs[i].Value <= Limit_IronIngot)
-            {
+    for (int i = 0; i < pairs.Count; i++) {
+        if (pairs[i].Key == "Iron"){
+            if (pairs[i].Value <= Limit_IronIngot) {
                 MiningList += "\n" + Spacing1 + String.Format("{0}", pairs[i].Key) + Spacing1 + String.Format("{0} kg \n", (Limit_IronIngot - pairs[i].Value));
+            }
+        }
+		else if (pairs[i].Key == "Nickel"){
+            if (pairs[i].Value <= Limit_Nickel) {
+                MiningList += "\n" + Spacing1 + String.Format("{0}", pairs[i].Key) + Spacing1 + String.Format("{0} kg \n", (Limit_Nickel - pairs[i].Value));
+            }
+        }
+		else if (pairs[i].Key == "Silicon"){
+            if (pairs[i].Value <= Limit_Silicon) {
+                MiningList += "\n" + Spacing1 + String.Format("{0}", pairs[i].Key) + Spacing1 + String.Format("{0} kg \n", (Limit_Silicon - pairs[i].Value));
+            }
+        }
+		else if (pairs[i].Key == "Cobalt"){
+            if (pairs[i].Value <= Limit_Cobalt) {
+                MiningList += "\n" + Spacing1 + String.Format("{0}", pairs[i].Key) + Spacing1 + String.Format("{0} kg \n", (Limit_Cobalt - pairs[i].Value));
+            }
+        }
+		else if (pairs[i].Key == "Magnesium"){
+            if (pairs[i].Value <= Limit_Magnesium) {
+                MiningList += "\n" + Spacing1 + String.Format("{0}", pairs[i].Key) + Spacing1 + String.Format("{0} kg \n", (Limit_Magnesium - pairs[i].Value));
+            }
+        }
+		else if (pairs[i].Key == "Silver"){
+            if (pairs[i].Value <= Limit_Silver) {
+                MiningList += "\n" + Spacing1 + String.Format("{0}", pairs[i].Key) + Spacing1 + String.Format("{0} kg \n", (Limit_Silver - pairs[i].Value));
+            }
+        }
+		else if (pairs[i].Key == "Gold"){
+            if (pairs[i].Value <= Limit_Gold) {
+                MiningList += "\n" + Spacing1 + String.Format("{0}", pairs[i].Key) + Spacing1 + String.Format("{0} kg \n", (Limit_Gold - pairs[i].Value));
+            }
+        }
+		else if (pairs[i].Key == "Uranium"){
+            if (pairs[i].Value <= Limit_Uranium) {
+                MiningList += "\n" + Spacing1 + String.Format("{0}", pairs[i].Key) + Spacing1 + String.Format("{0} kg \n", (Limit_Uranium - pairs[i].Value));
+            }
+        }
+		else if (pairs[i].Key == "Platinum"){
+            if (pairs[i].Value <= Limit_Platinum) {
+                MiningList += "\n" + Spacing1 + String.Format("{0}", pairs[i].Key) + Spacing1 + String.Format("{0} kg \n", (Limit_Platinum - pairs[i].Value));
             }
         }
     }
 }
 
 /** Method for updating the mining text panels **/
-public void UpdateMiningDisplays()
-{
+public void UpdateMiningDisplays() {
     // Message output for all ore text panels
-    for (int i = 0; i < MiningDisplays.Count; ++i)
-    {
+    for (int i = 0; i < MiningDisplays.Count; ++i) {
         MiningDisplays[i].WriteText(MiningList);
     }
 }		
@@ -308,7 +351,9 @@ public void Main(string argument)  {
 * v1.1 add ingot cargo display
 * v1.1.1 patch naming of file
 * v1.1.2 rework code to contributing standards and fix some typos
-* #v1.2 add limits for ingots and create a mining list
+* v1.2 add limits for ingots and create a mining list
+* #v1.2.1 add limits for all ingots
+* v1.2.2 rework check mechanism to work with limit dictionary
 * v1.3 add colors for ingots under the limit
 * v1.4 add multi screen support
 */
