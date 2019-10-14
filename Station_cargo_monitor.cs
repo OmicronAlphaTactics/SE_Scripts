@@ -1,7 +1,7 @@
 /* 
 * Station Cargo Monitor
 * By Dragonhost
-* v1.1.2
+* v1.2
 * 
 * Instructions: 
 * 
@@ -16,18 +16,21 @@ List<IMyCargoContainer> OreContainers = new List<IMyCargoContainer>(); //List of
 List<IMyCargoContainer> IngotContainers = new List<IMyCargoContainer>(); //List of used ingot containers
 List<IMyTextPanel> OreDisplays = new List<IMyTextPanel>(); //List of displays that will be used as ore monitor
 List<IMyTextPanel> IngotDisplays = new List<IMyTextPanel>(); //List of displays that will be used as ingot monitor
+List<IMyTextPanel> MiningDisplays = new List<IMyTextPanel>(); //List of displays that will be used as mining monitor
 
 bool SystemInitialized = false;
 int	updateTimer = 0,
 		updateFrequency = 5,
 		OreFilledBar = 0,
 		IngotFilledBar = 0,
+		Limit_IronIngot = 100000,
 		BarLength = 20;
 string Spacing1 = "    ",
 			 BarFill = "|",
 			 BarEmpty = ".",
 			 OreDisplayTag = "[Ore]",
 			 IngotDisplayTag = "[Ingot]",
+			 MiningDisplayTag = "[Mining]",
 			 OreContainerTag = "[Ore]",
 			 IngotContainerTag = "[Ingot]",
 			 OreBar = "Ore cargo:[",
@@ -35,7 +38,8 @@ string Spacing1 = "    ",
 			 OreCargoIndicator = "",
 			 IngotCargoIndicator = "",
 			 OreList = "",
-			 IngotList = "";
+			 IngotList = "",
+			 MiningList = "Ores to mine : ";
 double OrePercentFull,
 			 IngotPercentFull;
 float OreUsedVolume = 0.0f,
@@ -44,6 +48,10 @@ float OreUsedVolume = 0.0f,
 			IngotMaxVolume = 0.0f,
 			IngotPercentUsed = 0,
 			OrePercentUsed = 0;
+			
+Dictionary<string, float> OreTotals = new Dictionary<string, float>();
+Dictionary<string, float> IngotTotals = new Dictionary<string, float>();
+			
 //-----------------------------------------------------------------
 static string ingot_type = "MyObjectBuilder_Ingot";
 static string ore_type = "MyObjectBuilder_Ore";
@@ -83,6 +91,9 @@ void ListFiller() {
 		else if(shortList[i].CustomName.Contains(IngotDisplayTag)) {
             IngotDisplays.Add(shortList[i] as IMyTextPanel);
          }
+		 else if(shortList[i].CustomName.Contains(MiningDisplayTag)) {
+            MiningDisplays.Add(shortList[i] as IMyTextPanel);
+         }
       }
      //now we have lists of ore containers and ore text panels
    }
@@ -114,7 +125,7 @@ void CalculateIngotCargoUsage() {
 
 /** Method for listing available ores  **/
 void CalculateOreCargo() {
-	var totals = new Dictionary<string, float>();
+	OreTotals = new Dictionary<string, float>();
 	// search through all ore containers
 	for(int i=0; i < OreContainers.Count; i++) {
 		// search through all inventor items
@@ -128,17 +139,17 @@ void CalculateOreCargo() {
 				}
 				string subtype = GetOreType(items[k]);
 				float amount = (float)items[k].Amount;
-				if(totals.ContainsKey(subtype))	{
-					totals[subtype] += amount;
+				if(OreTotals.ContainsKey(subtype))	{
+					OreTotals[subtype] += (float)Math.Round(amount,2);
 				}
 				else {
-					totals[subtype] = amount;
+					OreTotals[subtype] = (float)Math.Round(amount,2);
 				}
 			}
 		}
 	}
 	OreList = Spacing1 + "Ore cargo list:\n";
-	var pairs = totals.ToList();
+	var pairs = OreTotals.ToList();
   for (int i = 0; i < pairs.Count; i++) {
   	OreList += Spacing1 + String.Format("{0} {1} kg\n", pairs[i].Key, pairs[i].Value);
   }
@@ -146,7 +157,7 @@ void CalculateOreCargo() {
 
 /** Method for listing available ingots  **/
 void CalculateIngotCargo() {
-	var totals = new Dictionary<string, float>();
+	IngotTotals = new Dictionary<string, float>();
 	// search through all ore containers
 	for(int i=0; i < IngotContainers.Count; i++) {
 		// search through all items in inventory of current container
@@ -160,17 +171,17 @@ void CalculateIngotCargo() {
 				}
 				string subtype = GetIngotType(items[k]);
 				float amount = (float)items[k].Amount;
-				if(totals.ContainsKey(subtype))	{
-					totals[subtype] += amount;
+				if(IngotTotals.ContainsKey(subtype))	{
+					IngotTotals[subtype] += (float)Math.Round(amount,2);
 				}
 				else {
-					totals[subtype] = amount;
+					IngotTotals[subtype] = (float)Math.Round(amount,2);
 				}
 			}
 		}
 	}
 	IngotList = Spacing1 + "Ingot cargo list:\n";
-	var pairs = totals.ToList();
+	var pairs = IngotTotals.ToList();
 	for (int i = 0; i < pairs.Count; i++) {
 		IngotList += Spacing1 + String.Format("{0} {1} kg\n", pairs[i].Key, pairs[i].Value);
 	}
@@ -190,6 +201,33 @@ string GetOreType(MyInventoryItem item) {
 string GetIngotType(MyInventoryItem item) {
 	return (item.Type.ToString().Remove(0,ingot_type.Length+1));
 }
+
+/** Method to check ingot limits and create a minig list **/
+public void CheckIngotLimits()
+{
+	MiningList = "Ores to mine : ";
+    var pairs = IngotTotals.ToList();
+    for (int i = 0; i < pairs.Count; i++)
+    {
+        if (pairs[i].Key == "Iron")
+        {
+            if (pairs[i].Value <= Limit_IronIngot)
+            {
+                MiningList += "\n" + Spacing1 + String.Format("{0}", pairs[i].Key) + Spacing1 + String.Format("{0} kg \n", (Limit_IronIngot - pairs[i].Value));
+            }
+        }
+    }
+}
+
+/** Method for updating the mining text panels **/
+public void UpdateMiningDisplays()
+{
+    // Message output for all ore text panels
+    for (int i = 0; i < MiningDisplays.Count; ++i)
+    {
+        MiningDisplays[i].WriteText(MiningList);
+    }
+}		
 
 /** Method for updating the ore text panels **/
 void UpdateOreDisplays() {
@@ -256,6 +294,8 @@ public void Main(string argument)  {
 		CalculateIngotCargo();
 		UpdateOreDisplays();
 		UpdateIngotDisplays();
+		CheckIngotLimits();
+		UpdateMiningDisplays();
 		updateTimer = 0;
 	}
 }
@@ -267,8 +307,8 @@ public void Main(string argument)  {
 * v1.0 release;
 * v1.1 add ingot cargo display
 * v1.1.1 patch naming of file
-* #v1.1.2 rework code to contributing standards and fix some typos
-* v1.2 add limits for ingots and create a mining list
+* v1.1.2 rework code to contributing standards and fix some typos
+* #v1.2 add limits for ingots and create a mining list
 * v1.3 add colors for ingots under the limit
 * v1.4 add multi screen support
 */
