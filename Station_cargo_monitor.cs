@@ -1,7 +1,7 @@
 /* 
 * Station Cargo Monitor
 * By Dragonhost
-* v1.3
+* v1.3.1
 * 
 * Instructions:
 *
@@ -239,22 +239,32 @@ string GetIngotType(MyInventoryItem item) {
 	return (item.Type.ToString().Remove(0,ingot_type.Length+1));
 }
 
+/** Method to build a string of specific length with start and end text **/
+public string BuildString(string StartText, string EndText, int NumCharacters)
+{
+    string NewStartText = StartText;
+    for(int i = 0; i < (NumCharacters - StartText.Length); i++)	{
+        NewStartText += " ";
+    }
+	return String.Format("{0,5}{1,15}", NewStartText, EndText);
+}
+
 /** Method to check ingot limits and create a Mining list **/
 public void CheckIngotLimits()
 {
-    MiningList = "Ores to mine : \n";
+    MiningList = "Ores to mine :\n";
     var LimitPairs = MiningLimits.ToList();
     for (int i = 0; i < LimitPairs.Count; i++)    {
         if (IngotTotals.ContainsKey(LimitPairs[i].Key)) {
             if (IngotTotals[LimitPairs[i].Key] < LimitPairs[i].Value)   {
-                MiningList += Spacing1 + LimitPairs[i].Key + Spacing1 + String.Format("{0} kg \n", (LimitPairs[i].Value - IngotTotals[LimitPairs[i].Key]));
+                MiningList += BuildString((LimitPairs[i].Key), String.Format("{0} kg", (LimitPairs[i].Value - IngotTotals[LimitPairs[i].Key])), 10) + "\n";
             }
             else    {
                 continue;
             }
         }
         else if (!IngotTotals.ContainsKey(LimitPairs[i].Key))   {
-            MiningList += Spacing1 + LimitPairs[i].Key + Spacing1 + String.Format("{0} kg \n", LimitPairs[i].Value);
+            MiningList += BuildString((LimitPairs[i].Key), String.Format("{0} kg", (LimitPairs[i].Value)), 10) + "\n";
         }
     }
 }
@@ -265,10 +275,8 @@ public void UpdateMiningDisplays() {
     char[] seperators = new char[] { '\n' };
     var List = MiningDisplayList.ToList();
 	List.Sort((m1, m2) => string.Compare(m1.Key, m2.Key));
-	Echo(List[0].Key);
-	Echo(List[1].Key);
-	Echo(List[2].Key);
 	
+	Echo(MiningList);
 	SplitString = MiningList.Split(seperators, StringSplitOptions.RemoveEmptyEntries);
 	
     // Message output for all mining text panels
@@ -279,26 +287,26 @@ public void UpdateMiningDisplays() {
         Index = Index.Remove(1, 1);
 		
 		if (List.Count>(i+1))   {
-            if (List[i + 1].Key.Contains(Index))
-            {
-                Echo("2 Displays are used");
+            if (List[i + 1].Key.Contains(Index))	{
                 List[i].Value.WriteText("", false);//Clear text panel
+				List[i].Value.Font = "Monospace";
+				List[i].Value.FontSize = (float)1.8;
                 List[i + 1].Value.WriteText("", false);//Clear text panel
-                for (int j = 0; j < SplitString.Count(); ++j)
-                {
-                    if (j < 5)
-                    {
+				List[i + 1].Value.Font = "Monospace";
+				List[i + 1].Value.FontSize = (float)1.8;
+                for (int j = 0; j < SplitString.Count(); ++j)	{
+                    if (j < 8)	{
                         List[i].Value.WriteText(SplitString[j] + "\n", true);
                     }
-                    else
-                    {
+                    else	{
                         List[i + 1].Value.WriteText(SplitString[j] + "\n", true);
                     }
                 }
 				i++;
             }
 			else    {
-			Echo("1 Displays are used");
+            List[i].Value.Font = "Monospace";
+            List[i].Value.FontSize = (float)1.6;
             List[i].Value.WriteText("", false);//Clear text panel
 				for (int k = 0; k < (SplitString.Count()); ++k)    {
 					List[i].Value.WriteText(SplitString[k] + "\n", true);
@@ -306,10 +314,11 @@ public void UpdateMiningDisplays() {
 			}
         }
         else    {
-			Echo("1.1 Displays are used");
+			List[i].Value.Font = "Monospace";
+            List[i].Value.FontSize = (float)1.6;
             List[i].Value.WriteText("", false);//Clear text panel
-            for (int k = 0; k < (SplitString.Count()); ++k)    {
-                List[i].Value.WriteText(SplitString[k] + "\n", true);
+            for (int l = 0; l < (SplitString.Count()); ++l)    {
+                List[i].Value.WriteText(SplitString[l] + "\n", true);
             }
         }
     }
@@ -398,7 +407,8 @@ public void Main(string argument)  {
 * v1.2.1 add limits for all ingots
 * v1.2.2 rework of the check mechanism to work with limit dictionary
 * v1.x add colors for ingots under the limit (currently not possible)
-* #v1.3 add multi screen support for mining displays
-* v1.3.1 rearrange line format for mining list
+* v1.3 add multi screen support for mining displays
+* #v1.3.1 rearrange line format for mining list and set font
 * v1.3.2 add multi screen support for all displays
+* v1.4 programmatically set font size based on multi screen usage or not
 */
