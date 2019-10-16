@@ -1,7 +1,7 @@
 /* 
 * Station Cargo Monitor
 * By Dragonhost
-* v1.3.1
+* v1.3.2
 * 
 * Instructions:
 *
@@ -18,9 +18,9 @@
 ////////// Variables //////////
 List<IMyCargoContainer> OreContainers = new List<IMyCargoContainer>(); //List of used ore containers
 List<IMyCargoContainer> IngotContainers = new List<IMyCargoContainer>(); //List of used ingot containers
-List<IMyTextPanel> OreDisplays = new List<IMyTextPanel>(); //List of displays that will be used as ore monitor
-List<IMyTextPanel> IngotDisplays = new List<IMyTextPanel>(); //List of displays that will be used as ingot monitor
-List<IMyTextPanel> MiningDisplays = new List<IMyTextPanel>(); //List of displays that will be used as mining monitor
+//List<IMyTextPanel> OreDisplays = new List<IMyTextPanel>(); //List of displays that will be used as ore monitor
+//List<IMyTextPanel> IngotDisplays = new List<IMyTextPanel>(); //List of displays that will be used as ingot monitor
+//List<IMyTextPanel> MiningDisplays = new List<IMyTextPanel>(); //List of displays that will be used as mining monitor
 
 bool SystemInitialized = false;
 int	updateTimer = 0,
@@ -65,6 +65,8 @@ Dictionary<string, float> OreTotals = new Dictionary<string, float>();
 Dictionary<string, float> IngotTotals = new Dictionary<string, float>();
 Dictionary<string, float> MiningLimits = new Dictionary<string, float>();
 Dictionary<string, IMyTextPanel> MiningDisplayList = new Dictionary<string, IMyTextPanel>();
+Dictionary<string, IMyTextPanel> OreDisplayList = new Dictionary<string, IMyTextPanel>();
+Dictionary<string, IMyTextPanel> IngotDisplayList = new Dictionary<string, IMyTextPanel>();
 			
 //-----------------------------------------------------------------
 static string ingot_type = "MyObjectBuilder_Ingot";
@@ -83,7 +85,6 @@ void Initialize() {
 
 /** Method for setting up all lists contained **/
 void BuildMiningDictionary() {
-
 		MiningLimits["Iron"] = (float)Limit_IronIngot;
 		MiningLimits["Nickel"] = (float)Limit_NickelIngot;
 		MiningLimits["Silicon"] = (float)Limit_SiliconIngot;
@@ -95,45 +96,56 @@ void BuildMiningDictionary() {
 		MiningLimits["Platinum"] = (float)Limit_PlatinumIngot;
 }
 
-
 /** Method for setting up all lists contained **/
 void ListFiller() {
   List<IMyTerminalBlock> shortList = new List<IMyTerminalBlock>();
   GridTerminalSystem.GetBlocksOfType<IMyTerminalBlock>(shortList, b => b.CubeGrid == Me.CubeGrid);
   //as long as we have items in our grid...
   for (int i=0; i<shortList.Count; ++i) {
-    //if an item in our list is a cargo container
-    if (shortList[i] is IMyCargoContainer) {
-      //if the container is named like in OreContainer
-      if(shortList[i].CustomName.Contains(OreContainerTag)) {
-        OreContainers.Add(shortList[i] as IMyCargoContainer);
-      }
-		else if(shortList[i].CustomName.Contains(IngotContainerTag)) {
-			IngotContainers.Add(shortList[i] as IMyCargoContainer);
+		//if an item in our list is a cargo container
+		if (shortList[i] is IMyCargoContainer) {
+		//if the container is named like in OreContainer
+		if(shortList[i].CustomName.Contains(OreContainerTag)) {
+			OreContainers.Add(shortList[i] as IMyCargoContainer);
 		}
-  }
-  //else if an item in our list is a text panel
-  else if (shortList[i] is IMyTextPanel) {
-  	//if the text panel is named like in OreDisplay
-    if(shortList[i].CustomName.Contains(OreDisplayTag)) {
-            OreDisplays.Add(shortList[i] as IMyTextPanel);
-    }
-		else if(shortList[i].CustomName.Contains(IngotDisplayTag)) {
-            IngotDisplays.Add(shortList[i] as IMyTextPanel);
-         }
-        else if (shortList[i].CustomName.Contains(MiningDisplayTag))	{
-               MiningDisplays.Add(shortList[i] as IMyTextPanel);
-               //Build a list of text panel with unique name
-               string[] SplitString = new string[0];
-               char[] seperators = new char[] { ']', '.' };
-               SplitString = shortList[i].CustomName.Split(seperators, StringSplitOptions.RemoveEmptyEntries);
-               if (SplitString.Count() > 2)    {
-                   MiningDisplayList[(SplitString[1] + SplitString[2]).Remove(0, 1)] = (shortList[i] as IMyTextPanel);
-               }
-           }
-      }
+			else if(shortList[i].CustomName.Contains(IngotContainerTag)) {
+				IngotContainers.Add(shortList[i] as IMyCargoContainer);
+			}
+		}
+		//else if an item in our list is a text panel
+		else if (shortList[i] is IMyTextPanel) {
+			//if the text panel is named like in OreDisplay
+			if(shortList[i].CustomName.Contains(OreDisplayTag)) {
+				OreDisplays.Add(shortList[i] as IMyTextPanel);
+				string[] SplitString = new string[0];
+				char[] seperators = new char[] { ']', '.' };
+				SplitString = shortList[i].CustomName.Split(seperators, StringSplitOptions.RemoveEmptyEntries);
+				if (SplitString.Count() > 2)    {
+				OreDisplayList[(SplitString[1] + SplitString[2]).Remove(0, 1)] = (shortList[i] as IMyTextPanel);
+				}
+			}
+			else if(shortList[i].CustomName.Contains(IngotDisplayTag)) {
+				//IngotDisplays.Add(shortList[i] as IMyTextPanel);
+				string[] SplitString = new string[0];
+				char[] seperators = new char[] { ']', '.' };
+				SplitString = shortList[i].CustomName.Split(seperators, StringSplitOptions.RemoveEmptyEntries);
+				if (SplitString.Count() > 2)    {
+				IngotDisplayList[(SplitString[1] + SplitString[2]).Remove(0, 1)] = (shortList[i] as IMyTextPanel);
+				}
+			}
+			else if (shortList[i].CustomName.Contains(MiningDisplayTag))	{
+				//MiningDisplays.Add(shortList[i] as IMyTextPanel);
+				//Build a list of text panel with unique name
+				string[] SplitString = new string[0];
+				char[] seperators = new char[] { ']', '.' };
+				SplitString = shortList[i].CustomName.Split(seperators, StringSplitOptions.RemoveEmptyEntries);
+				if (SplitString.Count() > 2)    {
+					MiningDisplayList[(SplitString[1] + SplitString[2]).Remove(0, 1)] = (shortList[i] as IMyTextPanel);
+				}
+			}
+		}
      //now we have lists of ore containers and ore text panels
-   }
+    }
 }
 
 /** Method for calculating available and unused cargo space **/
@@ -185,11 +197,11 @@ void CalculateOreCargo() {
 			}
 		}
 	}
-	OreList = Spacing1 + "Ore cargo list:\n";
+	OreList = "Ore cargo list:\n";
 	var pairs = OreTotals.ToList();
-  for (int i = 0; i < pairs.Count; i++) {
-  	OreList += Spacing1 + String.Format("{0} {1} kg\n", pairs[i].Key, pairs[i].Value);
-  }
+	for (int i = 0; i < pairs.Count; i++) {
+		OreList += BuildString((pairs[i].Key), String.Format("{0} kg", (pairs[i].Value)), 10) + "\n";
+	}
 }
 
 /** Method for listing available ingots  **/
@@ -217,10 +229,10 @@ void CalculateIngotCargo() {
 			}
 		}
 	}
-	IngotList = Spacing1 + "Ingot cargo list:\n";
+	IngotList = "Ingot cargo list:\n";
 	var pairs = IngotTotals.ToList();
 	for (int i = 0; i < pairs.Count; i++) {
-		IngotList += Spacing1 + String.Format("{0} {1} kg\n", pairs[i].Key, pairs[i].Value);
+		IngotList += BuildString((pairs[i].Key), String.Format("{0} kg", (pairs[i].Value)), 10) + "\n";
 	}
 }
 
@@ -276,7 +288,7 @@ public void UpdateMiningDisplays() {
     var List = MiningDisplayList.ToList();
 	List.Sort((m1, m2) => string.Compare(m1.Key, m2.Key));
 	
-	Echo(MiningList);
+	//Echo(MiningList);
 	SplitString = MiningList.Split(seperators, StringSplitOptions.RemoveEmptyEntries);
 	
     // Message output for all mining text panels
@@ -325,49 +337,162 @@ public void UpdateMiningDisplays() {
 }		
 
 /** Method for updating the ore text panels **/
-void UpdateOreDisplays() {
-	OreFilledBar = (int)(BarLength * OrePercentUsed); //calculate displayed bar length
-	OreBar = "Ore cargo fill indicator:["; //Reinit variable
-	
-	// Fill bar with "fill mark"
-	for (int i = OreFilledBar; i > 0; i--) {
-		OreBar += BarFill;
-	}
-	
-	// Fill bar with "empty marks"
-	for (int i = BarLength - OreFilledBar; i > 0; i--) {  
-		OreBar += BarEmpty;
-	} 
-	
-	// Build message
-	OreCargoIndicator = Spacing1 + OreBar + "]" + "\n" + Spacing1 + "Ore cargo load: " + OrePercentFull + "%" + "\n"; 
-	
-	// Message output for all ore text panels
-	for (int i=0; i<OreDisplays.Count; ++i) {
-	   OreDisplays[i].WriteText(OreCargoIndicator  + "\n" + OreList + "\n");
-   }
+public void UpdateOreDisplays()
+{
+    string[] SplitString = new string[0];
+    char[] seperators = new char[] { '\n' };
+    var List = OreDisplayList.ToList();
+    List.Sort((m1, m2) => string.Compare(m1.Key, m2.Key));
+    OreFilledBar = (int)(BarLength * OrePercentUsed); //calculate displayed bar length
+    OreBar = "Ore cargo fill indicator:\n["; //Reinit variable
+	SplitString = OreList.Split(seperators, StringSplitOptions.RemoveEmptyEntries);
+    // Fill bar with "fill mark"
+    for (int i = OreFilledBar; i > 0; i--)
+    {
+        OreBar += BarFill;
+    }
+
+    // Fill bar with "empty marks"
+    for (int i = BarLength - OreFilledBar; i > 0; i--)
+    {
+        OreBar += BarEmpty;
+    }
+
+    // Build message
+    OreCargoIndicator = OreBar + "]\nOre cargo load: " + OrePercentFull + "%\n";
+
+    // Message output for all ore text panels
+    for (int i = 0; i < List.Count; ++i)
+    {
+        string Index = "";
+        Index = List[i].Key;
+        Index = Index.Remove(1, 1);
+        if (List.Count > (i + 1))
+        {
+            if (List[i + 1].Key.Contains(Index))
+            {
+                List[i].Value.WriteText(OreCargoIndicator + "\n", false);
+                List[i].Value.Font = "Monospace";
+                List[i].Value.FontSize = (float)1.8;
+                List[i + 1].Value.WriteText("", false);//Clear text panel
+                List[i + 1].Value.Font = "Monospace";
+                List[i + 1].Value.FontSize = (float)1.8;
+                for (int j = 0; j < SplitString.Count(); ++j)
+                {
+                    if (j < 4)
+                    {
+                        List[i].Value.WriteText(SplitString[j] + "\n", true);
+                    }
+                    else
+                    {
+                        List[i + 1].Value.WriteText(SplitString[j] + "\n", true);
+                    }
+                }
+                i++;
+            }
+            else
+            {
+                List[i].Value.Font = "Monospace";
+                List[i].Value.FontSize = (float)1;
+                List[i].Value.WriteText(OreCargoIndicator + "\n", false);
+                for (int k = 0; k < (SplitString.Count()); ++k)
+                {
+                    List[i].Value.WriteText(SplitString[k] + "\n", true);
+                }
+            }
+        }
+        else
+        {
+            List[i].Value.Font = "Monospace";
+            List[i].Value.FontSize = (float)1;
+            List[i].Value.WriteText(OreCargoIndicator + "\n", false);
+            for (int l = 0; l < (SplitString.Count()); ++l)
+            {
+                List[i].Value.WriteText(SplitString[l] + "\n", true);
+            }
+        }
+    }
 }
 
 /** Method for updating the ore text panels **/
-void UpdateIngotDisplays() {
-	IngotFilledBar = (int)(BarLength * IngotPercentUsed); //calculate displayed bar length
-	IngotBar = "Ingot cargo fill indicator:["; //Reinit variable
-	// Fill bar with "fill mark"
-	for (int i = IngotFilledBar; i > 0; i--) {
-		IngotBar += BarFill;
-	}
-	// Fill bar with "empty marks"
-	for (int i = BarLength - IngotFilledBar; i > 0; i--) {  
-		IngotBar += BarEmpty;
-	} 
-	
-	// Build message
-	IngotCargoIndicator = Spacing1 + IngotBar + "]" + "\n" + Spacing1 + "Ingot cargo load: " + IngotPercentFull + "%" + "\n"; 
-	
-	// Message output for all ore text panels
-	for (int i=0; i<IngotDisplays.Count; ++i) {
-	  IngotDisplays[i].WriteText(IngotCargoIndicator  + "\n" + IngotList + "\n");
-  }
+public void UpdateIngotDisplays()
+{
+    string[] SplitString = new string[0];
+    char[] seperators = new char[] { '\n' };
+    var List = IngotDisplayList.ToList();
+    List.Sort((m1, m2) => string.Compare(m1.Key, m2.Key));
+
+    //Echo(MiningList);
+    SplitString = IngotList.Split(seperators, StringSplitOptions.RemoveEmptyEntries);
+
+    IngotFilledBar = (int)(BarLength * IngotPercentUsed); //calculate displayed bar length
+    IngotBar = "Ingot cargo usage:\n["; //Reinit variable
+                                               // Fill bar with "fill mark"
+    for (int i = IngotFilledBar; i > 0; i--)
+    {
+        IngotBar += BarFill;
+    }
+    // Fill bar with "empty marks"
+    for (int i = BarLength - IngotFilledBar; i > 0; i--)
+    {
+        IngotBar += BarEmpty;
+    }
+
+    // Build message
+    IngotCargoIndicator = IngotBar + "]\nIngot cargo load: " + IngotPercentFull + "%\n";
+
+    // Message output for all ore text panels
+    for (int i = 0; i < List.Count; ++i)
+    {
+        string Index = "";
+        Index = List[i].Key;
+        Index = Index.Remove(1, 1);
+
+        if (List.Count > (i + 1))
+        {
+            if (List[i + 1].Key.Contains(Index))
+            {
+                List[i].Value.WriteText(IngotCargoIndicator + "\n");
+                List[i].Value.Font = "Monospace";
+                List[i].Value.FontSize = (float)1.8;
+                List[i + 1].Value.WriteText("", false);//Clear text panel
+                List[i + 1].Value.Font = "Monospace";
+                List[i + 1].Value.FontSize = (float)1.8;
+                for (int j = 0; j < SplitString.Count(); ++j)
+                {
+                    if (j < 4)
+                    {
+                        List[i].Value.WriteText(SplitString[j] + "\n", true);
+                    }
+                    else
+                    {
+                        List[i + 1].Value.WriteText(SplitString[j] + "\n", true);
+                    }
+                }
+                i++;
+            }
+            else
+            {
+                List[i].Value.Font = "Monospace";
+                List[i].Value.FontSize = (float)1;
+                List[i].Value.WriteText(IngotCargoIndicator + "\n");
+                for (int k = 0; k < (SplitString.Count()); ++k)
+                {
+                    List[i].Value.WriteText(SplitString[k] + "\n", true);
+                }
+            }
+        }
+        else
+        {
+            List[i].Value.Font = "Monospace";
+            List[i].Value.FontSize = (float)1;
+            List[i].Value.WriteText(IngotCargoIndicator + "\n");
+            for (int l = 0; l < (SplitString.Count()); ++l)
+            {
+                List[i].Value.WriteText(SplitString[l] + "\n", true);
+            }
+        }
+    }
 }
 
 /** Main Programm **/
@@ -408,7 +533,9 @@ public void Main(string argument)  {
 * v1.2.2 rework of the check mechanism to work with limit dictionary
 * v1.x add colors for ingots under the limit (currently not possible)
 * v1.3 add multi screen support for mining displays
-* #v1.3.1 rearrange line format for mining list and set font
-* v1.3.2 add multi screen support for all displays
+* v1.3.1 rearrange line format for mining list and set font
+* #v1.3.2 add multi screen support for all displays
+* v1.3.3 fix bug of alse mining list calculation, don't calculate it 1:1
 * v1.4 programmatically set font size based on multi screen usage or not
+* v1.5 also check refinery, assembler for ores / ingots
 */
