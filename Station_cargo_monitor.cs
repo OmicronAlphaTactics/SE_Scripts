@@ -1,7 +1,7 @@
 /* 
 * Station Cargo Monitor
 * By Dragonhost
-* v1.3.2
+* v1.3.3
 * 
 * Instructions:
 *
@@ -25,18 +25,10 @@ List<IMyCargoContainer> IngotContainers = new List<IMyCargoContainer>(); //List 
 bool SystemInitialized = false;
 int	updateTimer = 0,
 		updateFrequency = 5,
+		BarLength = 20,
 		OreFilledBar = 0,
-		IngotFilledBar = 0,
-		Limit_IronIngot = 100000,
-		Limit_NickelIngot = 10000,
-		Limit_SiliconIngot = 10000,
-		Limit_CobaltIngot = 10000,
-		Limit_MagnesiumIngot = 1000,
-		Limit_SilverIngot = 5000,
-		Limit_GoldIngot = 2000,
-		Limit_UraniumIngot = 500,
-		Limit_PlatinumIngot = 1000,		
-		BarLength = 20;
+		IngotFilledBar = 0,		
+		RefineryEfficiency = 200;
 string Spacing1 = "    ",
 			 BarFill = "|",
 			 BarEmpty = ".",
@@ -64,6 +56,7 @@ float OreUsedVolume = 0.0f,
 Dictionary<string, float> OreTotals = new Dictionary<string, float>();
 Dictionary<string, float> IngotTotals = new Dictionary<string, float>();
 Dictionary<string, float> MiningLimits = new Dictionary<string, float>();
+Dictionary<string, float> RefineryEfficiencyList = new Dictionary<string, float>();
 Dictionary<string, IMyTextPanel> MiningDisplayList = new Dictionary<string, IMyTextPanel>();
 Dictionary<string, IMyTextPanel> OreDisplayList = new Dictionary<string, IMyTextPanel>();
 Dictionary<string, IMyTextPanel> IngotDisplayList = new Dictionary<string, IMyTextPanel>();
@@ -81,19 +74,34 @@ void Initialize() {
 	Runtime.UpdateFrequency = UpdateFrequency.Update10; //get system tick clock
 	ListFiller();
 	BuildMiningDictionary();
+	BuildRefineryEfficiencyDictionary();
 }
 
 /** Method for setting up all lists contained **/
 void BuildMiningDictionary() {
-		MiningLimits["Iron"] = (float)Limit_IronIngot;
-		MiningLimits["Nickel"] = (float)Limit_NickelIngot;
-		MiningLimits["Silicon"] = (float)Limit_SiliconIngot;
-		MiningLimits["Cobalt"] = (float)Limit_CobaltIngot;
-		MiningLimits["Magnesium"] = (float)Limit_MagnesiumIngot;
-		MiningLimits["Silver"] = (float)Limit_SilverIngot;
-		MiningLimits["Gold"] = (float)Limit_GoldIngot;
-		MiningLimits["Uranium"] = (float)Limit_UraniumIngot;
-		MiningLimits["Platinum"] = (float)Limit_PlatinumIngot;
+    MiningLimits["Iron"] = (float)100000;
+    MiningLimits["Nickel"] = (float)10000;
+    MiningLimits["Silicon"] = (float)10000;
+    MiningLimits["Cobalt"] = (float)10000;
+    MiningLimits["Magnesium"] = (float)1000;
+    MiningLimits["Silver"] = (float)5000;
+    MiningLimits["Gold"] = (float)2000;
+    MiningLimits["Uranium"] = (float)500;
+    MiningLimits["Platinum"] = (float)1000;
+}
+
+/** Method for setting up all lists contained **/
+public void BuildRefineryEfficiencyDictionary()
+{
+    RefineryEfficiencyList["Iron"] = (float)70;
+    RefineryEfficiencyList["Nickel"] = (float)40;
+    RefineryEfficiencyList["Silicon"] = (float)70;
+    RefineryEfficiencyList["Cobalt"] = (float)30;
+    RefineryEfficiencyList["Magnesium"] = (float)0.7;
+    RefineryEfficiencyList["Silver"] = (float)10;
+    RefineryEfficiencyList["Gold"] = (float)1;
+    RefineryEfficiencyList["Uranium"] = (float)1;
+    RefineryEfficiencyList["Platinum"] = (float)0.5;
 }
 
 /** Method for setting up all lists contained **/
@@ -116,7 +124,6 @@ void ListFiller() {
 		else if (shortList[i] is IMyTextPanel) {
 			//if the text panel is named like in OreDisplay
 			if(shortList[i].CustomName.Contains(OreDisplayTag)) {
-				OreDisplays.Add(shortList[i] as IMyTextPanel);
 				string[] SplitString = new string[0];
 				char[] seperators = new char[] { ']', '.' };
 				SplitString = shortList[i].CustomName.Split(seperators, StringSplitOptions.RemoveEmptyEntries);
@@ -125,7 +132,6 @@ void ListFiller() {
 				}
 			}
 			else if(shortList[i].CustomName.Contains(IngotDisplayTag)) {
-				//IngotDisplays.Add(shortList[i] as IMyTextPanel);
 				string[] SplitString = new string[0];
 				char[] seperators = new char[] { ']', '.' };
 				SplitString = shortList[i].CustomName.Split(seperators, StringSplitOptions.RemoveEmptyEntries);
@@ -134,7 +140,6 @@ void ListFiller() {
 				}
 			}
 			else if (shortList[i].CustomName.Contains(MiningDisplayTag))	{
-				//MiningDisplays.Add(shortList[i] as IMyTextPanel);
 				//Build a list of text panel with unique name
 				string[] SplitString = new string[0];
 				char[] seperators = new char[] { ']', '.' };
@@ -261,6 +266,17 @@ public string BuildString(string StartText, string EndText, int NumCharacters)
 	return String.Format("{0,5}{1,15}", NewStartText, EndText);
 }
 
+/** Method to calculate based of refinery efficiency ores to mine **/
+public float CalculateAmount(string Ingot, float CurrentAmmount, float Limit)
+{
+    float ConversionRate = RefineryEfficiencyList[Ingot] * (RefineryEfficiency/100);
+    if (ConversionRate > 100)
+    {
+        ConversionRate = 100;
+    }
+    return (Limit - CurrentAmmount) * (100 / ConversionRate);
+}
+
 /** Method to check ingot limits and create a Mining list **/
 public void CheckIngotLimits()
 {
@@ -269,14 +285,14 @@ public void CheckIngotLimits()
     for (int i = 0; i < LimitPairs.Count; i++)    {
         if (IngotTotals.ContainsKey(LimitPairs[i].Key)) {
             if (IngotTotals[LimitPairs[i].Key] < LimitPairs[i].Value)   {
-                MiningList += BuildString((LimitPairs[i].Key), String.Format("{0} kg", (LimitPairs[i].Value - IngotTotals[LimitPairs[i].Key])), 10) + "\n";
+                MiningList += BuildString((LimitPairs[i].Key), String.Format("{0} kg", CalculateAmount(LimitPairs[i].Key, IngotTotals[LimitPairs[i].Key], LimitPairs[i].Value)), 15) + "\n";
             }
             else    {
                 continue;
             }
         }
         else if (!IngotTotals.ContainsKey(LimitPairs[i].Key))   {
-            MiningList += BuildString((LimitPairs[i].Key), String.Format("{0} kg", (LimitPairs[i].Value)), 10) + "\n";
+            MiningList += BuildString((LimitPairs[i].Key), String.Format("{0} kg", CalculateAmount(LimitPairs[i].Key, 0, LimitPairs[i].Value)), 15) + "\n";
         }
     }
 }
@@ -302,10 +318,10 @@ public void UpdateMiningDisplays() {
             if (List[i + 1].Key.Contains(Index))	{
                 List[i].Value.WriteText("", false);//Clear text panel
 				List[i].Value.Font = "Monospace";
-				List[i].Value.FontSize = (float)1.8;
+				List[i].Value.FontSize = (float)1.7;
                 List[i + 1].Value.WriteText("", false);//Clear text panel
 				List[i + 1].Value.Font = "Monospace";
-				List[i + 1].Value.FontSize = (float)1.8;
+				List[i + 1].Value.FontSize = (float)1.7;
                 for (int j = 0; j < SplitString.Count(); ++j)	{
                     if (j < 8)	{
                         List[i].Value.WriteText(SplitString[j] + "\n", true);
@@ -318,7 +334,7 @@ public void UpdateMiningDisplays() {
             }
 			else    {
             List[i].Value.Font = "Monospace";
-            List[i].Value.FontSize = (float)1.6;
+            List[i].Value.FontSize = (float)1;
             List[i].Value.WriteText("", false);//Clear text panel
 				for (int k = 0; k < (SplitString.Count()); ++k)    {
 					List[i].Value.WriteText(SplitString[k] + "\n", true);
@@ -327,7 +343,7 @@ public void UpdateMiningDisplays() {
         }
         else    {
 			List[i].Value.Font = "Monospace";
-            List[i].Value.FontSize = (float)1.6;
+            List[i].Value.FontSize = (float)1;
             List[i].Value.WriteText("", false);//Clear text panel
             for (int l = 0; l < (SplitString.Count()); ++l)    {
                 List[i].Value.WriteText(SplitString[l] + "\n", true);
@@ -534,8 +550,7 @@ public void Main(string argument)  {
 * v1.x add colors for ingots under the limit (currently not possible)
 * v1.3 add multi screen support for mining displays
 * v1.3.1 rearrange line format for mining list and set font
-* #v1.3.2 add multi screen support for all displays
-* v1.3.3 fix bug of alse mining list calculation, don't calculate it 1:1
-* v1.4 programmatically set font size based on multi screen usage or not
-* v1.5 also check refinery, assembler for ores / ingots
+* v1.3.2 add multi screen support for all displays
+* #v1.3.3 fix bug of alse mining list calculation, don't calculate it 1:1
+* v1.4 also check refinery, assembler for ores / ingots
 */
