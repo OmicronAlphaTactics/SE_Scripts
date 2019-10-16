@@ -1,7 +1,7 @@
 /* 
 * Station Cargo Monitor
 * By Dragonhost
-* v1.3.3
+* v1.4
 * 
 * Instructions:
 *
@@ -18,9 +18,8 @@
 ////////// Variables //////////
 List<IMyCargoContainer> OreContainers = new List<IMyCargoContainer>(); //List of used ore containers
 List<IMyCargoContainer> IngotContainers = new List<IMyCargoContainer>(); //List of used ingot containers
-//List<IMyTextPanel> OreDisplays = new List<IMyTextPanel>(); //List of displays that will be used as ore monitor
-//List<IMyTextPanel> IngotDisplays = new List<IMyTextPanel>(); //List of displays that will be used as ingot monitor
-//List<IMyTextPanel> MiningDisplays = new List<IMyTextPanel>(); //List of displays that will be used as mining monitor
+List<IMyRefinery> Refinerys = new List<IMyRefinery>(); //List of used refinerys
+List<IMyAssembler> Assemblers = new List<IMyAssembler>(); //List of used assemblers
 
 bool SystemInitialized = false;
 int	updateTimer = 0,
@@ -29,8 +28,7 @@ int	updateTimer = 0,
 		OreFilledBar = 0,
 		IngotFilledBar = 0,		
 		RefineryEfficiency = 200;
-string Spacing1 = "    ",
-			 BarFill = "|",
+string BarFill = "|",
 			 BarEmpty = ".",
 			 OreDisplayTag = "[Ore]",
 			 IngotDisplayTag = "[Ingot]",
@@ -149,6 +147,14 @@ void ListFiller() {
 				}
 			}
 		}
+		else if (shortList[i] is IMyRefinery)
+        {
+            Refinerys.Add(shortList[i] as IMyRefinery);
+        }
+        else if (shortList[i] is IMyAssembler)
+        {
+            Assemblers.Add(shortList[i] as IMyAssembler);
+        }
      //now we have lists of ore containers and ore text panels
     }
 }
@@ -202,6 +208,35 @@ void CalculateOreCargo() {
 			}
 		}
 	}
+	
+	//search through all refinery
+    for (int i = 0; i < Refinerys.Count; i++)
+    {
+        // search through all inventor items
+        for (int j = 0; j < Refinerys[i].InventoryCount; j++)
+        {
+            List<MyInventoryItem> items = new List<MyInventoryItem>();
+            IMyInventory inventory = Refinerys[i].GetInventory(j);
+            inventory.GetItems(items, null);
+            for (int k = 0; k < items.Count; k++)
+            {
+                if (!IsMainType(items[k], ore_type))
+                {
+                    continue;
+                }
+                string subtype = GetOreType(items[k]);
+                float amount = (float)items[k].Amount;
+                if (OreTotals.ContainsKey(subtype))
+                {
+                    OreTotals[subtype] += (float)Math.Round(amount, 2);
+                }
+                else
+                {
+                    OreTotals[subtype] = amount;
+                }
+            }
+        }
+    }
 	OreList = "Ore cargo list:\n";
 	var pairs = OreTotals.ToList();
 	for (int i = 0; i < pairs.Count; i++) {
@@ -234,6 +269,62 @@ void CalculateIngotCargo() {
 			}
 		}
 	}
+	//search through all refinery
+    for (int i = 0; i < Refinerys.Count; i++)
+    {
+        // search through all inventor items
+        for (int j = 0; j < Refinerys[i].InventoryCount; j++)
+        {
+            List<MyInventoryItem> items = new List<MyInventoryItem>();
+            IMyInventory inventory = Refinerys[i].GetInventory(j);
+            inventory.GetItems(items, null);
+            for (int k = 0; k < items.Count; k++)
+            {
+                if (!IsMainType(items[k], ingot_type))
+                {
+                    continue;
+                }
+                string subtype = GetIngotType(items[k]);
+                float amount = (float)items[k].Amount;
+                if (IngotTotals.ContainsKey(subtype))
+                {
+                    IngotTotals[subtype] += (float)Math.Round(amount, 2);
+                }
+                else
+                {
+                    IngotTotals[subtype] = amount;
+                }
+            }
+        }
+    }
+	//search through all assamblers
+    for (int i = 0; i < Assemblers.Count; i++)
+    {
+        // search through all inventor items
+        for (int j = 0; j < Assemblers[i].InventoryCount; j++)
+        {
+            List<MyInventoryItem> items = new List<MyInventoryItem>();
+            IMyInventory inventory = Assemblers[i].GetInventory(j);
+            inventory.GetItems(items, null);
+            for (int k = 0; k < items.Count; k++)
+            {
+                if (!IsMainType(items[k], ingot_type))
+                {
+                    continue;
+                }
+                string subtype = GetIngotType(items[k]);
+                float amount = (float)items[k].Amount;
+                if (IngotTotals.ContainsKey(subtype))
+                {
+                    IngotTotals[subtype] += (float)Math.Round(amount, 2);
+                }
+                else
+                {
+                    IngotTotals[subtype] = amount;
+                }
+            }
+        }
+    }
 	IngotList = "Ingot cargo list:\n";
 	var pairs = IngotTotals.ToList();
 	for (int i = 0; i < pairs.Count; i++) {
@@ -551,6 +642,6 @@ public void Main(string argument)  {
 * v1.3 add multi screen support for mining displays
 * v1.3.1 rearrange line format for mining list and set font
 * v1.3.2 add multi screen support for all displays
-* #v1.3.3 fix bug of alse mining list calculation, don't calculate it 1:1
-* v1.4 also check refinery, assembler for ores / ingots
+* v1.3.3 fix bug of alse mining list calculation, don't calculate it 1:1
+* #v1.4 also check refinery, assembler for ores / ingots & use ore in refinery to correct mining list calculation
 */
