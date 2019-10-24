@@ -1,7 +1,7 @@
 /* 
 * Station power monitor
 * By Dragonhost
-* v1.1
+* v1.1.1
 * 
 * Instructions:
 *
@@ -145,12 +145,12 @@ void CalculateSolarCapacity()
         SolarPanelMaxAvailableOutput += (float)Math.Round(0.12,2);
     }
 	if (SolarPanelMaxOutput != 0)	{
-		SolarPanelPercentUsed = SolarPanelCurrentOutput / SolarPanelMaxOutput;
-		SolarPanelPercentFull = Math.Round(100 * (SolarPanelCurrentOutput / SolarPanelMaxOutput), 2);
+        SolarPanelPercentUsed = SolarPanelCurrentOutput / SolarPanelMaxAvailableOutput;
+        SolarPanelPercentFull = Math.Round(100 * (SolarPanelCurrentOutput / SolarPanelMaxAvailableOutput), 2);
 	}
 	else	{
 		SolarPanelPercentUsed = 0;
-		SolarPanelPercentFull = Math.Round(100 * (SolarPanelCurrentOutput / SolarPanelMaxOutput), 2);
+		SolarPanelPercentFull = Math.Round(100 * (SolarPanelCurrentOutput / SolarPanelMaxAvailableOutput), 2);
 	}
 
     SolarPanelFilledBar = (int)(BarLength * SolarPanelPercentUsed);
@@ -162,10 +162,10 @@ void CalculateSolarCapacity()
     }
     SolarPanelIndicator = "Solar PanelMonitor\n \n";
     SolarPanelIndicator += SolarPanelBar + "]\n";
-    SolarPanelIndicator += "Power usage: " + SolarPanelPercentFull + " %\n\n";
-	SolarPanelIndicator += "Current output: " + SolarPanelCurrentOutput + " MW\n";
-    SolarPanelIndicator += "Max output: " + SolarPanelMaxOutput + " MW \n";
-    SolarPanelIndicator += "Max av. output: " + SolarPanelMaxAvailableOutput + " MW \n";
+    SolarPanelIndicator += "Power usage: " + Math.Round(SolarPanelPercentFull,2) + " %\n\n";
+	SolarPanelIndicator += "Current output: " + Math.Round(SolarPanelCurrentOutput,2) + " MW\n";
+    SolarPanelIndicator += "Max output: " + Math.Round(SolarPanelMaxOutput,2) + " MW \n";
+    SolarPanelIndicator += "Max av. output: " + Math.Round(SolarPanelMaxAvailableOutput,2) + " MW \n";
 }
 
 /** Method for updating the mining text panels **/
@@ -296,7 +296,8 @@ public void Main(string argument)  {
 * CHANGELOG / Developer's roadmap (# marks the actual version)
 * v0.1: Initial code base;
 * v1.0 release;
-* #v1.1 display solar panel power stats
-* v1.2 display reactor power stats
+* v1.1 display solar panel power stats
+* #v1.1.1 fix bug with incorrect rounding of numbers on the display
+* v1.3 display reactor power stats
 * v2.0 battery capacity warning
 */
